@@ -263,10 +263,10 @@ Build and run:
 
 ```bash
 docker build -t icap-demo-web ./demo-web
-docker run --rm -p 8088:80 icap-demo-web
+docker run --rm -p 8090:80 icap-demo-web
 ```
 
-Open: http://localhost:8088
+Open: http://localhost:8090
 
 ## Notes
 - The demo is intended for integration tests and presales demonstrations, not production AV.
