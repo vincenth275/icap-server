@@ -1,0 +1,7 @@
+src/c-icap-server/
+src/c-icap-modules/
+out/
+build/
+.env
+.env.*
+!.env.example
