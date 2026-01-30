@@ -7,6 +7,12 @@ echo "[entrypoint] Starting clamd (best effort)..."
     "$clamdbin" --foreground=true --config-file=/etc/clamav/clamd.conf >/tmp/clamd.log 2>&1 || true
   fi ) &
 
+echo "[entrypoint] Starting rsyslog (best effort)..."
+( rsyslogd_bin=$(command -v rsyslogd || true) && \
+  if [[ -n "$rsyslogd_bin" ]]; then
+    "$rsyslogd_bin" -n >/tmp/rsyslog.log 2>&1 || true
+  fi ) &
+
 echo "[entrypoint] Starting c-icap..."
 cicap_bin="$(command -v c-icap 2>/dev/null || true)"
 if [[ -z "$cicap_bin" ]]; then
@@ -24,4 +30,8 @@ if [[ -z "$cicap_bin" ]]; then
   exit 127
 fi
 
-exec "$cicap_bin" -f /etc/c-icap/c-icap.conf -N
+if [[ "${CICAP_DEBUG:-0}" == "1" ]]; then
+  exec su -s /bin/sh -c "$cicap_bin -f /etc/c-icap/c-icap.conf -N -D -d 10" icap
+else
+  exec su -s /bin/sh -c "$cicap_bin -f /etc/c-icap/c-icap.conf -N" icap
+fi

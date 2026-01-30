@@ -114,17 +114,20 @@ Include /etc/c-icap/services.conf
 # Optional AV (enable only if module names exist in /usr/lib/c_icap)
 # Include /etc/c-icap/virus_scan.conf
 # Include /etc/c-icap/clamd_mod.conf
+
+# Optional syslog logger (module, not a service)
+# Include /etc/c-icap/sys_logger.conf
 EOF
 
 cat > "$ROOT_DIR/config/virus_scan.conf" <<'EOF'
-# Enable virus_scan service (c-icap-modules)
-# Service name / .so can differ by version; we keep the common one.
-Service virus_scan srv_virus_scan.so
+# virus_scan service settings
+# (service definition is in services.conf)
 EOF
 
 cat > "$ROOT_DIR/config/clamd_mod.conf" <<'EOF'
 # clamd_mod: addon for virus_scan to use clamd daemon (ClamAV)
-clamd_mod.ClamdHost 127.0.0.1
+Module common clamd_mod.so
+clamd_mod.ClamdHost clamav
 clamd_mod.ClamdPort 3310
 EOF
 
@@ -142,11 +145,25 @@ Service echo srv_echo.so
 # Optional services (commented by default):
 # Service rewrite_demo srv_rewrite_demo.so
 # Service content_filter srv_content_filtering.so
-# Service virus_scan srv_virus_scan.so
+# Service virus_scan virus_scan.so
 # Service dnsbl_tables dnsbl_tables.so
 # Service url_check srv_url_check.so
 # Service shared_cache shared_cache.so
-# Service sys_logger sys_logger.so
+# sys_logger is a logger module, not a service (see sys_logger.conf)
+EOF
+
+cat > "$ROOT_DIR/config/sys_logger.conf" <<'EOF'
+# sys_logger module (logger, not a service)
+# Load the logger module and set it as the default logger.
+Module logger sys_logger.so
+Logger sys_logger
+
+# Optional settings:
+# sys_logger.Prefix "C-ICAP:"
+# sys_logger.Facility daemon
+# sys_logger.access_priority info
+# sys_logger.server_priority info
+# sys_logger.access all
 EOF
 
 # ------------------------------------------------------------------------------
@@ -356,6 +373,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpcre2-8-0 \
     libatomic1 \
     clamav clamav-daemon \
+    rsyslog \
     && rm -rf /var/lib/apt/lists/*
 
 RUN useradd -r -u 10001 -g nogroup -m -d /home/icap icap
@@ -367,6 +385,7 @@ RUN mkdir -p /etc/c-icap
 COPY config/c-icap.conf /etc/c-icap/c-icap.conf
 COPY config/virus_scan.conf /etc/c-icap/virus_scan.conf
 COPY config/clamd_mod.conf /etc/c-icap/clamd_mod.conf
+COPY config/sys_logger.conf /etc/c-icap/sys_logger.conf
 COPY config/srv_rewrite_demo.conf /etc/c-icap/srv_rewrite_demo.conf
 COPY config/services.conf /etc/c-icap/services.conf
 
@@ -374,7 +393,6 @@ EXPOSE 1344
 
 COPY scripts/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
-USER icap
 ENTRYPOINT ["/entrypoint.sh"]
 EOF
 
@@ -532,6 +550,12 @@ echo "[entrypoint] Starting clamd (best effort)..."
     "$clamdbin" --foreground=true --config-file=/etc/clamav/clamd.conf >/tmp/clamd.log 2>&1 || true
   fi ) &
 
+echo "[entrypoint] Starting rsyslog (best effort)..."
+( rsyslogd_bin=$(command -v rsyslogd || true) && \
+  if [[ -n "$rsyslogd_bin" ]]; then
+    "$rsyslogd_bin" -n >/tmp/rsyslog.log 2>&1 || true
+  fi ) &
+
 echo "[entrypoint] Starting c-icap..."
 cicap_bin="$(command -v c-icap 2>/dev/null || true)"
 if [[ -z "$cicap_bin" ]]; then
@@ -549,7 +573,11 @@ if [[ -z "$cicap_bin" ]]; then
   exit 127
 fi
 
-exec "$cicap_bin" -f /etc/c-icap/c-icap.conf -N
+if [[ "${CICAP_DEBUG:-0}" == "1" ]]; then
+  exec su -s /bin/sh -c "$cicap_bin -f /etc/c-icap/c-icap.conf -N -D -d 10" icap
+else
+  exec su -s /bin/sh -c "$cicap_bin -f /etc/c-icap/c-icap.conf -N" icap
+fi
 EOF
 
 chmodx "$ROOT_DIR/scripts/entrypoint.sh"

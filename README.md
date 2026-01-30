@@ -77,6 +77,9 @@ Optional services (commented by default in `services.conf`):
 
 To enable any service, uncomment its line in `services.conf` and restart the container.
 
+Note: `sys_logger` is **not** an ICAP service. It is a logger module, enabled via
+`sys_logger.conf` (see below). It will not respond to ICAP `OPTIONS`.
+
 ## virus_scan (ClamAV) setup
 The `virus_scan` service requires a running ClamAV `clamd` daemon. We run it as a
 separate container on the same Docker network as the ICAP server. The official
@@ -128,6 +131,33 @@ docker run -d --name cicap_dev --network icap-net -p 1344:1344 \
 printf "OPTIONS icap://localhost:1344/virus_scan ICAP/1.0\r\nHost: localhost\r\n\r\n" | nc -w 2 localhost 1344
 ```
 
+## sys_logger setup
+`sys_logger` is a logger module (not a service). To enable it:
+
+1) Uncomment in `config/c-icap.conf`:
+
+```
+Include /etc/c-icap/sys_logger.conf
+```
+
+2) Restart the ICAP container:
+
+```bash
+docker restart cicap_dev
+```
+
+3) Verify ICAP still responds (for example using `echo`):
+
+```bash
+printf "OPTIONS icap://localhost:1344/echo ICAP/1.0\r\nHost: localhost\r\n\r\n" | nc -w 2 localhost 1344
+```
+
+To actually emit logs, the container needs a syslog daemon. The runtime image
+now installs and starts `rsyslog` by default (best effort).
+
+Note: the container runs as root so `rsyslogd` can create `/dev/log`, but
+`c-icap` still runs as the unprivileged `icap` user.
+
 ## Multi-container workflow (recommended)
 Goal: users only uncomment config lines and start containers on the same Docker network.
 
@@ -166,7 +196,7 @@ url_check      -> 200 OK (Url_Check demo service)
 virus_scan     -> 200 OK (requires clamd container on same network)
 dnsbl_tables   -> NO RESPONSE (within 5s)
 shared_cache   -> NO RESPONSE (within 5s)
-sys_logger     -> NO RESPONSE (within 5s)
+sys_logger     -> N/A (logger module, not a service)
 ```
 
 Notes:

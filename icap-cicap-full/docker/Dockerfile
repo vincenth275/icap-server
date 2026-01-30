@@ -35,6 +35,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpcre2-8-0 \
     libatomic1 \
     clamav clamav-daemon \
+    rsyslog \
     && rm -rf /var/lib/apt/lists/*
 
 RUN useradd -r -u 10001 -g nogroup -m -d /home/icap icap
@@ -46,6 +47,7 @@ RUN mkdir -p /etc/c-icap
 COPY config/c-icap.conf /etc/c-icap/c-icap.conf
 COPY config/virus_scan.conf /etc/c-icap/virus_scan.conf
 COPY config/clamd_mod.conf /etc/c-icap/clamd_mod.conf
+COPY config/sys_logger.conf /etc/c-icap/sys_logger.conf
 COPY config/srv_rewrite_demo.conf /etc/c-icap/srv_rewrite_demo.conf
 COPY config/services.conf /etc/c-icap/services.conf
 
@@ -53,5 +55,4 @@ EXPOSE 1344
 
 COPY scripts/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
-USER icap
 ENTRYPOINT ["/entrypoint.sh"]
