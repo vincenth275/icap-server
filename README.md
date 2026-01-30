@@ -1,4 +1,4 @@
-# icap-server scaffolding
+# Turnkey ICAP Server (Full Stack Demo)
 
 This repository contains generator scripts to scaffold a containerized ICAP demo server based on c-icap.
 The focus is a reproducible, configuration-driven setup where *all* official modules are compiled,
@@ -19,23 +19,23 @@ and services are enabled only via configuration files.
   - uses a minimal container config that includes `services.conf`
 
 ## Quick start (current focus)
-Generate a project with the canonical script:
+Generate a project with the canonical script and run the ICAP container with a stable name.
 
 ```bash
 ./create_cicap_full.sh icap-cicap-full
 cd icap-cicap-full
 
-docker build -t cicap:dev -f docker/Dockerfile .
-docker run --rm -p 1344:1344 cicap:dev
+docker build -t icap-server -f docker/Dockerfile .
+docker run --rm --name icap-server -p 1344:1344 icap-server
 ```
 
 ICAP OPTIONS test:
 
 ```bash
-printf "OPTIONS icap://localhost:1344/rewrite_demo ICAP/1.0\r\nHost: localhost\r\n\r\n" | nc -w 2 localhost 1344
+printf "OPTIONS icap://localhost:1344/echo ICAP/1.0\r\nHost: localhost\r\n\r\n" | nc -w 2 localhost 1344
 ```
 
-Expected: `ICAP/1.0 200 OK` with `Methods: RESPMOD, REQMOD` and service name.
+Expected: `ICAP/1.0 200 OK` with `Methods: RESPMOD, REQMOD` and Echo service name.
 
 ICAP RESPMOD test:
 
