@@ -268,6 +268,41 @@ docker run --rm -p 8090:80 icap-demo-web
 
 Open: http://localhost:8090
 
+## Recommended test session (containers)
+For a typical demo session, keep core services in detached mode and run the demo
+web server either detached (long sessions) or foreground (short tests).
+
+Recommended:
+- `icap-server`: detached (`-d`)
+- `clamav`: detached (`-d`) when testing `virus_scan`
+- `icap-demo-web`: foreground for quick tests; detached for longer sessions
+
+Example (long session, all detached):
+
+```bash
+docker network create icap-net || true
+docker run -d --name clamav --network icap-net -p 3310:3310 clamav/clamav:latest
+docker run -d --name icap-server --network icap-net -p 1344:1344 \
+  -v ./config:/etc/c-icap icap-server
+docker run -d --name icap-demo-web -p 8090:80 icap-demo-web
+```
+
+Example (short session, demo web in foreground):
+
+```bash
+docker network create icap-net || true
+docker run -d --name clamav --network icap-net -p 3310:3310 clamav/clamav:latest
+docker run -d --name icap-server --network icap-net -p 1344:1344 \
+  -v ./config:/etc/c-icap icap-server
+docker run --rm -p 8090:80 icap-demo-web
+```
+
+Stop everything:
+
+```bash
+docker rm -f icap-demo-web icap-server clamav
+```
+
 ## Notes
 - The demo is intended for integration tests and presales demonstrations, not production AV.
 - AV-related config files are included but disabled by default to avoid startup failures when clamd
