@@ -117,6 +117,10 @@ Include /etc/c-icap/services.conf
 
 # Optional syslog logger (module, not a service)
 # Include /etc/c-icap/sys_logger.conf
+
+# Optional URL check + DNSBL lookup tables
+# Include /etc/c-icap/dnsbl_tables.conf
+# Include /etc/c-icap/srv_url_check.conf
 EOF
 
 cat > "$ROOT_DIR/config/virus_scan.conf" <<'EOF'
@@ -146,10 +150,28 @@ Service echo srv_echo.so
 # Service rewrite_demo srv_rewrite_demo.so
 # Service content_filter srv_content_filtering.so
 # Service virus_scan virus_scan.so
-# Service dnsbl_tables dnsbl_tables.so
 # Service url_check srv_url_check.so
 # Service shared_cache shared_cache.so
 # sys_logger is a logger module, not a service (see sys_logger.conf)
+EOF
+
+cat > "$ROOT_DIR/config/dnsbl_tables.conf" <<'EOF'
+# dnsbl_tables module (lookup tables for DNSBL)
+# Provides lookup table type: dnsbl:domainname
+Module common dnsbl_tables.so
+EOF
+
+cat > "$ROOT_DIR/config/srv_url_check.conf" <<'EOF'
+# URL check service settings (service definition is in services.conf)
+
+# Example DNSBL lookup (SURBL multi)
+# NOTE: DNSBL providers may block excessive queries; use responsibly.
+url_check.LookupTableDB uribl domain dnsbl:multi.surbl.org "SURBL multi"
+
+# Default policy
+url_check.Profile default block uribl
+# Fallback if no match
+url_check.Profile default pass ALL
 EOF
 
 cat > "$ROOT_DIR/config/sys_logger.conf" <<'EOF'
@@ -386,6 +408,8 @@ COPY config/c-icap.conf /etc/c-icap/c-icap.conf
 COPY config/virus_scan.conf /etc/c-icap/virus_scan.conf
 COPY config/clamd_mod.conf /etc/c-icap/clamd_mod.conf
 COPY config/sys_logger.conf /etc/c-icap/sys_logger.conf
+COPY config/dnsbl_tables.conf /etc/c-icap/dnsbl_tables.conf
+COPY config/srv_url_check.conf /etc/c-icap/srv_url_check.conf
 COPY config/srv_rewrite_demo.conf /etc/c-icap/srv_rewrite_demo.conf
 COPY config/services.conf /etc/c-icap/services.conf
 

@@ -80,6 +80,9 @@ To enable any service, uncomment its line in `services.conf` and restart the con
 Note: `sys_logger` is **not** an ICAP service. It is a logger module, enabled via
 `sys_logger.conf` (see below). It will not respond to ICAP `OPTIONS`.
 
+Note: `dnsbl_tables` is **not** an ICAP service. It is a lookup module used by
+`srv_url_check` and is enabled via `dnsbl_tables.conf` (see below).
+
 ## virus_scan (ClamAV) setup
 The `virus_scan` service requires a running ClamAV `clamd` daemon. We run it as a
 separate container on the same Docker network as the ICAP server. The official
@@ -158,6 +161,34 @@ now installs and starts `rsyslog` by default (best effort).
 Note: the container runs as root so `rsyslogd` can create `/dev/log`, but
 `c-icap` still runs as the unprivileged `icap` user.
 
+## dnsbl_tables + url_check setup
+`dnsbl_tables` is a lookup module used by `srv_url_check` (URL reputation checks).
+
+1) Uncomment in `config/c-icap.conf`:
+
+```
+Include /etc/c-icap/dnsbl_tables.conf
+Include /etc/c-icap/srv_url_check.conf
+```
+
+2) Uncomment in `config/services.conf`:
+
+```
+Service url_check srv_url_check.so
+```
+
+3) Restart the ICAP container:
+
+```bash
+docker restart cicap_dev
+```
+
+4) Verify:
+
+```bash
+printf "OPTIONS icap://localhost:1344/url_check ICAP/1.0\r\nHost: localhost\r\n\r\n" | nc -w 2 localhost 1344
+```
+
 ## Multi-container workflow (recommended)
 Goal: users only uncomment config lines and start containers on the same Docker network.
 
@@ -194,7 +225,7 @@ rewrite_demo   -> 200 OK (Rewrite demo service)
 content_filter -> 200 OK (srv_content_filtering service)
 url_check      -> 200 OK (Url_Check demo service)
 virus_scan     -> 200 OK (requires clamd container on same network)
-dnsbl_tables   -> NO RESPONSE (within 5s)
+dnsbl_tables   -> N/A (lookup module used by url_check)
 shared_cache   -> NO RESPONSE (within 5s)
 sys_logger     -> N/A (logger module, not a service)
 ```
