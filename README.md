@@ -255,6 +255,19 @@ Notes:
 - Test each service one by one and record results.
 - Build a small HTML test page to exercise ICAP services end‑to‑end.
 
+## Demo web server (HTML)
+A minimal static demo page (indigo theme) is provided under `demo-web/` to help
+trigger REQMOD/RESPMOD flows and document sample requests.
+
+Build and run:
+
+```bash
+docker build -t icap-demo-web ./demo-web
+docker run --rm -p 8088:80 icap-demo-web
+```
+
+Open: http://localhost:8088
+
 ## Notes
 - The demo is intended for integration tests and presales demonstrations, not production AV.
 - AV-related config files are included but disabled by default to avoid startup failures when clamd

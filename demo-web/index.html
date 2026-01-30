@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ICAP Demo Web — Request & Response Inspection</title>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap");
+
+    :root {
+      --bg-0: #0b0b12;
+      --bg-1: #111225;
+      --bg-2: #1a1b3a;
+      --ink-0: #f5f6ff;
+      --ink-1: #c9ccff;
+      --ink-2: #9aa0ff;
+      --accent-0: #4f5bff;
+      --accent-1: #6b78ff;
+      --accent-2: #8b96ff;
+      --ok: #62d2a2;
+      --warn: #ffcc66;
+      --card: rgba(255, 255, 255, 0.06);
+      --stroke: rgba(255, 255, 255, 0.12);
+      --shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Space Grotesk", system-ui, sans-serif;
+      color: var(--ink-0);
+      background:
+        radial-gradient(1200px 600px at 10% -10%, #2a2d6b 0%, transparent 60%),
+        radial-gradient(900px 500px at 90% 10%, #1e2158 0%, transparent 55%),
+        linear-gradient(180deg, var(--bg-1), var(--bg-0));
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .noise {
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+      pointer-events: none;
+      mix-blend-mode: soft-light;
+      opacity: 0.5;
+    }
+
+    header {
+      padding: 56px 7vw 24px;
+    }
+
+    .badge {
+      display: inline-flex;
+      gap: 10px;
+      align-items: center;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(79, 91, 255, 0.14);
+      border: 1px solid rgba(79, 91, 255, 0.4);
+      color: var(--ink-1);
+      font-size: 13px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      font-size: clamp(32px, 4vw, 56px);
+      margin: 16px 0 12px;
+      line-height: 1.05;
+    }
+
+    .sub {
+      color: var(--ink-1);
+      font-size: clamp(16px, 2vw, 20px);
+      max-width: 800px;
+    }
+
+    .grid {
+      display: grid;
+      gap: 24px;
+      padding: 24px 7vw 80px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--stroke);
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+      transform: translateY(20px);
+      opacity: 0;
+      animation: rise 0.8s ease forwards;
+    }
+    .card:nth-child(2) { animation-delay: 0.12s; }
+    .card:nth-child(3) { animation-delay: 0.24s; }
+    .card:nth-child(4) { animation-delay: 0.36s; }
+
+    .card h3 {
+      margin: 0 0 10px;
+      font-size: 20px;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 10px;
+      background: rgba(107, 120, 255, 0.2);
+      color: var(--ink-1);
+      font-size: 12px;
+      margin-bottom: 10px;
+    }
+
+    .mono {
+      font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 12px;
+      color: var(--ink-2);
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 12px;
+      white-space: pre-wrap;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-weight: 600;
+      color: #0b0b12;
+      background: linear-gradient(135deg, var(--accent-0), var(--accent-2));
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      box-shadow: 0 10px 20px rgba(79, 91, 255, 0.35);
+    }
+
+    button.secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--ink-0);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      box-shadow: none;
+    }
+
+    button:hover { transform: translateY(-1px); }
+
+    .status {
+      margin-top: 10px;
+      font-size: 13px;
+      color: var(--ink-2);
+    }
+
+    .flow {
+      display: grid;
+      gap: 18px;
+      padding: 0 7vw 80px;
+    }
+
+    .flow-card {
+      padding: 20px;
+      border-radius: 16px;
+      border: 1px dashed rgba(255, 255, 255, 0.2);
+      background: rgba(10, 11, 24, 0.6);
+    }
+
+    .flow-grid {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      margin-top: 12px;
+    }
+
+    .chip {
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(79, 91, 255, 0.16);
+      border: 1px solid rgba(79, 91, 255, 0.4);
+      font-size: 14px;
+    }
+
+    .footer {
+      padding: 0 7vw 60px;
+      color: var(--ink-2);
+      font-size: 13px;
+    }
+
+    @keyframes rise {
+      to { transform: translateY(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="noise"></div>
+  <header>
+    <span class="badge">ICAP demo • REQMOD + RESPMOD</span>
+    <h1>Security Modules, Visible.</h1>
+    <p class="sub">
+      This demo web server is designed to trigger ICAP request and response inspection.
+      Use the sample payloads to validate header/body rewrites, URL checks, and antivirus scanning.
+    </p>
+  </header>
+
+  <section class="grid">
+    <div class="card">
+      <span class="pill">REQMOD</span>
+      <h3>URL reputation check</h3>
+      <div class="mono" id="reqmodCmd">curl -v http://demo.local/blocked?url=http://example.com/bad</div>
+      <div class="actions">
+        <button data-copy="reqmodCmd">Copy command</button>
+        <button class="secondary" data-note="Enable url_check in services.conf and include dnsbl_tables/srv_url_check.">How to enable</button>
+      </div>
+      <div class="status" id="reqmodStatus">Expected: ICAP url_check service decides block/pass based on DNSBL.</div>
+    </div>
+
+    <div class="card">
+      <span class="pill">RESPMOD</span>
+      <h3>Response content rewrite</h3>
+      <div class="mono" id="respmodCmd">curl -v http://demo.local/echo?body=ORIGINAL</div>
+      <div class="actions">
+        <button data-copy="respmodCmd">Copy command</button>
+        <button class="secondary" data-note="Enable rewrite_demo in services.conf to rewrite ORIGINAL -> REWRITTEN.">How to enable</button>
+      </div>
+      <div class="status">Expected: body token rewritten, header X-ICAP-Rewritten: 1.</div>
+    </div>
+
+    <div class="card">
+      <span class="pill">REQMOD / RESPMOD</span>
+      <h3>Antivirus scan</h3>
+      <div class="mono" id="avCmd">curl -v http://demo.local/upload --data-binary @eicar.txt</div>
+      <div class="actions">
+        <button data-copy="avCmd">Copy command</button>
+        <button class="secondary" data-note="Run clamav container on icap-net and enable virus_scan + clamd_mod includes.">How to enable</button>
+      </div>
+      <div class="status">Expected: ICAP virus_scan checks payload against clamd.</div>
+    </div>
+
+    <div class="card">
+      <span class="pill">OBSERVABILITY</span>
+      <h3>Syslog audit trail</h3>
+      <div class="mono" id="logCmd">docker exec cicap_dev tail -n 20 /var/log/syslog</div>
+      <div class="actions">
+        <button data-copy="logCmd">Copy command</button>
+        <button class="secondary" data-note="Enable sys_logger.conf in c-icap.conf to write syslog entries.">How to enable</button>
+      </div>
+      <div class="status">Expected: syslog entries per ICAP request.</div>
+    </div>
+  </section>
+
+  <section class="flow">
+    <div class="flow-card">
+      <h3>ICAP Flow (REQMOD + RESPMOD)</h3>
+      <div class="flow-grid">
+        <div class="chip">Client / Proxy</div>
+        <div class="chip">REQMOD → ICAP</div>
+        <div class="chip">Origin / App Server</div>
+        <div class="chip">RESPMOD → ICAP</div>
+        <div class="chip">Client Response</div>
+      </div>
+    </div>
+
+    <div class="flow-card">
+      <h3>Quick service toggles</h3>
+      <div class="mono">
+config/services.conf
+  Service echo srv_echo.so
+  # Service rewrite_demo srv_rewrite_demo.so
+  # Service url_check srv_url_check.so
+  # Service virus_scan virus_scan.so
+
+config/c-icap.conf
+  # Include /etc/c-icap/srv_url_check.conf
+  # Include /etc/c-icap/dnsbl_tables.conf
+  # Include /etc/c-icap/virus_scan.conf
+  # Include /etc/c-icap/clamd_mod.conf
+  # Include /etc/c-icap/sys_logger.conf
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    This page is static and intentionally simple. It exists to trigger ICAP flows and
+    visualize service behavior. Replace the demo endpoints with your proxy or ADC target.
+  </footer>
+
+  <script>
+    const copyButtons = document.querySelectorAll("button[data-copy]");
+    const noteButtons = document.querySelectorAll("button[data-note]");
+
+    copyButtons.forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const id = btn.getAttribute("data-copy");
+        const text = document.getElementById(id).textContent;
+        await navigator.clipboard.writeText(text);
+        btn.textContent = "Copied";
+        setTimeout(() => (btn.textContent = "Copy command"), 1200);
+      });
+    });
+
+    noteButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const note = btn.getAttribute("data-note");
+        alert(note);
+      });
+    });
+  </script>
+</body>
+</html>
