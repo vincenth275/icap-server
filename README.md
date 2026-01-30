@@ -47,6 +47,38 @@ printf "RESPMOD icap://localhost:1344/rewrite_demo ICAP/1.0\r\nHost: localhost\r
 
 Expected: `X-ICAP-Rewritten: 1` header and body token `ORIGINAL` rewritten to `REWRITTEN`.
 
+## Verified modules (Jan 30, 2026)
+The following modules are present in the built image (`cicap:dev`) under `/usr/lib/c_icap`:
+- srv_content_filtering (HTTP body content filtering)
+- virus_scan (antivirus scanning)
+- dnsbl_tables (IP/DNS blacklists)
+- srv_url_check (URL reputation checks)
+- shared_cache (decision caching)
+- sys_logger (advanced logging)
+
+Verification command:
+
+```bash
+docker run --rm --entrypoint /bin/sh cicap:dev -c "ls /usr/lib/c_icap"
+```
+
+## Services configuration
+All services are prelisted in `icap-cicap-full/config/services.conf`.
+
+Default enabled:
+- `echo` (`srv_echo.so`)
+
+Optional services (commented by default in `services.conf`):
+- `rewrite_demo` (`srv_rewrite_demo.so`)
+- `content_filter` (`srv_content_filtering.so`)
+- `virus_scan` (`srv_virus_scan.so`)
+- `dnsbl_tables` (`dnsbl_tables.so`)
+- `url_check` (`srv_url_check.so`)
+- `shared_cache` (`shared_cache.so`)
+- `sys_logger` (`sys_logger.so`)
+
+To enable any service, uncomment its line in `services.conf` and restart the container.
+
 ## Notes
 - The demo is intended for integration tests and presales demonstrations, not production AV.
 - AV-related config files are included but disabled by default to avoid startup failures when clamd

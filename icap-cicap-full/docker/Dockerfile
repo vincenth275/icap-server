@@ -47,6 +47,7 @@ COPY config/c-icap.conf /etc/c-icap/c-icap.conf
 COPY config/virus_scan.conf /etc/c-icap/virus_scan.conf
 COPY config/clamd_mod.conf /etc/c-icap/clamd_mod.conf
 COPY config/srv_rewrite_demo.conf /etc/c-icap/srv_rewrite_demo.conf
+COPY config/services.conf /etc/c-icap/services.conf
 
 EXPOSE 1344
 

@@ -96,27 +96,24 @@ EOF
 # c-icap main conf
 # ------------------------------------------------------------------------------
 cat > "$ROOT_DIR/config/c-icap.conf" <<'EOF'
-# c-icap baseline (container-friendly)
-ServerIP 0.0.0.0
-ServerPort 1344
+# Minimal c-icap config for containers
 
+Port 0.0.0.0:1344
 PidFile /var/run/c-icap/c-icap.pid
-LogFile /var/log/c-icap/server.log
 
 StartServers 2
 MaxServers 10
 ThreadsPerChild 10
 
-# Where services/modules are installed by our build
 ModulesDir /usr/lib/c_icap
 ServicesDir /usr/lib/c_icap
 
-# --- Enable antivirus service (from c-icap-modules) ---
-Include /etc/c-icap/virus_scan.conf
-Include /etc/c-icap/clamd_mod.conf
+# Service definitions (enabled/disabled in services.conf)
+Include /etc/c-icap/services.conf
 
-# --- Enable custom rewrite demo service (headers + body) ---
-Include /etc/c-icap/srv_rewrite_demo.conf
+# Optional AV (enable only if module names exist in /usr/lib/c_icap)
+# Include /etc/c-icap/virus_scan.conf
+# Include /etc/c-icap/clamd_mod.conf
 EOF
 
 cat > "$ROOT_DIR/config/virus_scan.conf" <<'EOF'
@@ -134,6 +131,22 @@ EOF
 cat > "$ROOT_DIR/config/srv_rewrite_demo.conf" <<'EOF'
 # Custom service: rewrite headers + body (demo)
 Service rewrite_demo srv_rewrite_demo.so
+EOF
+
+cat > "$ROOT_DIR/config/services.conf" <<'EOF'
+# Services catalog (enable/disable by commenting)
+#
+# Default enabled:
+Service echo srv_echo.so
+#
+# Optional services (commented by default):
+# Service rewrite_demo srv_rewrite_demo.so
+# Service content_filter srv_content_filtering.so
+# Service virus_scan srv_virus_scan.so
+# Service dnsbl_tables dnsbl_tables.so
+# Service url_check srv_url_check.so
+# Service shared_cache shared_cache.so
+# Service sys_logger sys_logger.so
 EOF
 
 # ------------------------------------------------------------------------------
@@ -355,6 +368,7 @@ COPY config/c-icap.conf /etc/c-icap/c-icap.conf
 COPY config/virus_scan.conf /etc/c-icap/virus_scan.conf
 COPY config/clamd_mod.conf /etc/c-icap/clamd_mod.conf
 COPY config/srv_rewrite_demo.conf /etc/c-icap/srv_rewrite_demo.conf
+COPY config/services.conf /etc/c-icap/services.conf
 
 EXPOSE 1344
 
