@@ -83,6 +83,9 @@ Note: `sys_logger` is **not** an ICAP service. It is a logger module, enabled vi
 Note: `dnsbl_tables` is **not** an ICAP service. It is a lookup module used by
 `srv_url_check` and is enabled via `dnsbl_tables.conf` (see below).
 
+Note: `shared_cache` is **not** an ICAP service. It is a cache module enabled
+via `shared_cache.conf`.
+
 ## virus_scan (ClamAV) setup
 The `virus_scan` service requires a running ClamAV `clamd` daemon. We run it as a
 separate container on the same Docker network as the ICAP server. The official
@@ -189,6 +192,21 @@ docker restart cicap_dev
 printf "OPTIONS icap://localhost:1344/url_check ICAP/1.0\r\nHost: localhost\r\n\r\n" | nc -w 2 localhost 1344
 ```
 
+## shared_cache setup
+`shared_cache` is a module used by services that support caching. To enable it:
+
+1) Uncomment in `config/c-icap.conf`:
+
+```
+Include /etc/c-icap/shared_cache.conf
+```
+
+2) Restart the ICAP container:
+
+```bash
+docker restart cicap_dev
+```
+
 ## Multi-container workflow (recommended)
 Goal: users only uncomment config lines and start containers on the same Docker network.
 
@@ -226,7 +244,7 @@ content_filter -> 200 OK (srv_content_filtering service)
 url_check      -> 200 OK (Url_Check demo service)
 virus_scan     -> 200 OK (requires clamd container on same network)
 dnsbl_tables   -> N/A (lookup module used by url_check)
-shared_cache   -> NO RESPONSE (within 5s)
+shared_cache   -> N/A (cache module, not a service)
 sys_logger     -> N/A (logger module, not a service)
 ```
 

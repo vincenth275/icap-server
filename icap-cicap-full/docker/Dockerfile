@@ -50,6 +50,7 @@ COPY config/clamd_mod.conf /etc/c-icap/clamd_mod.conf
 COPY config/sys_logger.conf /etc/c-icap/sys_logger.conf
 COPY config/dnsbl_tables.conf /etc/c-icap/dnsbl_tables.conf
 COPY config/srv_url_check.conf /etc/c-icap/srv_url_check.conf
+COPY config/shared_cache.conf /etc/c-icap/shared_cache.conf
 COPY config/srv_rewrite_demo.conf /etc/c-icap/srv_rewrite_demo.conf
 COPY config/services.conf /etc/c-icap/services.conf
 

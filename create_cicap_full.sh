@@ -121,6 +121,9 @@ Include /etc/c-icap/services.conf
 # Optional URL check + DNSBL lookup tables
 # Include /etc/c-icap/dnsbl_tables.conf
 # Include /etc/c-icap/srv_url_check.conf
+
+# Optional shared cache module (not a service)
+# Include /etc/c-icap/shared_cache.conf
 EOF
 
 cat > "$ROOT_DIR/config/virus_scan.conf" <<'EOF'
@@ -151,8 +154,15 @@ Service echo srv_echo.so
 # Service content_filter srv_content_filtering.so
 # Service virus_scan virus_scan.so
 # Service url_check srv_url_check.so
-# Service shared_cache shared_cache.so
 # sys_logger is a logger module, not a service (see sys_logger.conf)
+EOF
+
+cat > "$ROOT_DIR/config/shared_cache.conf" <<'EOF'
+# shared_cache module (cache for services)
+Module common shared_cache.so
+
+# Example (optional): configure shared cache size
+# shared_cache.Size 50M
 EOF
 
 cat > "$ROOT_DIR/config/dnsbl_tables.conf" <<'EOF'
@@ -410,6 +420,7 @@ COPY config/clamd_mod.conf /etc/c-icap/clamd_mod.conf
 COPY config/sys_logger.conf /etc/c-icap/sys_logger.conf
 COPY config/dnsbl_tables.conf /etc/c-icap/dnsbl_tables.conf
 COPY config/srv_url_check.conf /etc/c-icap/srv_url_check.conf
+COPY config/shared_cache.conf /etc/c-icap/shared_cache.conf
 COPY config/srv_rewrite_demo.conf /etc/c-icap/srv_rewrite_demo.conf
 COPY config/services.conf /etc/c-icap/services.conf
 
