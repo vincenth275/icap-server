@@ -77,6 +77,84 @@ Optional services (commented by default in `services.conf`):
 
 To enable any service, uncomment its line in `services.conf` and restart the container.
 
+## virus_scan (ClamAV) setup
+The `virus_scan` service requires a running ClamAV `clamd` daemon. We run it as a
+separate container on the same Docker network as the ICAP server. The official
+ClamAV images are published as `clamav/clamav` on Docker Hub; the ClamAV docs
+describe the official Docker image tags.
+
+### Start ClamAV (external container)
+
+```bash
+docker network create icap-net || true
+docker run -d --name clamav --network icap-net -p 3310:3310 clamav/clamav:latest
+```
+
+Wait for ClamAV to finish its initial database load (it can take a bit on first
+start), then enable the ICAP service:
+
+### Enable virus_scan in ICAP config
+1) Uncomment in `icap-cicap-full/config/services.conf`:
+
+```
+Service virus_scan virus_scan.so
+```
+
+2) Uncomment in `icap-cicap-full/config/c-icap.conf`:
+
+```
+Include /etc/c-icap/virus_scan.conf
+Include /etc/c-icap/clamd_mod.conf
+```
+
+3) Ensure `icap-cicap-full/config/clamd_mod.conf` points to the ClamAV container:
+
+```
+clamd_mod.ClamdHost clamav
+clamd_mod.ClamdPort 3310
+```
+
+4) Restart the ICAP container:
+
+```bash
+docker rm -f cicap_dev || true
+docker run -d --name cicap_dev --network icap-net -p 1344:1344 \
+  -v ./config:/etc/c-icap cicap:dev
+```
+
+### Verify
+
+```bash
+printf "OPTIONS icap://localhost:1344/virus_scan ICAP/1.0\r\nHost: localhost\r\n\r\n" | nc -w 2 localhost 1344
+```
+
+## Multi-container workflow (recommended)
+Goal: users only uncomment config lines and start containers on the same Docker network.
+
+1) Create a shared network once:
+
+```bash
+docker network create icap-net || true
+```
+
+2) Start required backend containers (example: ClamAV for `virus_scan`):
+
+```bash
+docker run -d --name clamav --network icap-net -p 3310:3310 clamav/clamav:latest
+```
+
+3) Enable the ICAP service in config:
+- Uncomment the service in `config/services.conf`
+- Uncomment any related includes in `config/c-icap.conf`
+
+4) Start ICAP with the config directory mounted:
+
+```bash
+docker rm -f cicap_dev || true
+docker run -d --name cicap_dev --network icap-net -p 1344:1344 \
+  -v ./config:/etc/c-icap cicap:dev
+```
+
 ## Service test results (Jan 30, 2026)
 Test method: enable one service at a time in `services.conf` (echo always enabled), restart container, run ICAP `OPTIONS` for that service.
 
@@ -85,7 +163,7 @@ echo           -> 200 OK (Echo demo service)
 rewrite_demo   -> 200 OK (Rewrite demo service)
 content_filter -> 200 OK (srv_content_filtering service)
 url_check      -> 200 OK (Url_Check demo service)
-virus_scan     -> NO RESPONSE (within 5s)
+virus_scan     -> 200 OK (requires clamd container on same network)
 dnsbl_tables   -> NO RESPONSE (within 5s)
 shared_cache   -> NO RESPONSE (within 5s)
 sys_logger     -> NO RESPONSE (within 5s)
