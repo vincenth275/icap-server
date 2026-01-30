@@ -251,6 +251,25 @@ sys_logger     -> N/A (logger module, not a service)
 Notes:
 - Some services may require extra configuration or backends (e.g., clamd for `virus_scan`) to respond.
 
+## Automated REQMOD/RESPMOD tests
+A minimal test harness is provided to run ICAP REQMOD/RESPMOD checks automatically.
+
+```bash
+./tests/run_icap_tests.sh
+```
+
+By default it expects the services to be enabled and reachable on `localhost:1344`.
+Use `--skip-*` flags if a service is disabled (or a backend like ClamAV is not running).
+
+Examples:
+
+```bash
+./tests/run_icap_tests.sh --strict
+./tests/run_icap_tests.sh --skip-virus-scan --skip-url-check
+```
+
+The last ICAP response is saved to `/tmp/icap-test-last-response.txt` for debugging.
+
 ## Next steps
 - Test each service one by one and record results.
 - Build a small HTML test page to exercise ICAP services end‑to‑end.
@@ -308,3 +327,7 @@ docker rm -f icap-demo-web icap-server clamav
 - AV-related config files are included but disabled by default to avoid startup failures when clamd
   is not configured or when modules are not enabled.
 - The validated config file is `icap-cicap-full/config/c-icap.conf`.
+
+## Quality hardening plan
+See `HARDENING_PLAN.md` for a step‑by‑step plan to make the generator and build pipeline more robust,
+idempotent, and debuggable in the face of upstream changes.
