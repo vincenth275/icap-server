@@ -1,0 +1,19 @@
+# local outputs
+/out/
+/build/
+
+# env files
+.env
+.env.*
+!.env.example
+
+# OS cruft
+.DS_Store
+Thumbs.db
+
+# editor/ide
+.vscode/
+.idea/
+
+# docker metadata
+*.tar
