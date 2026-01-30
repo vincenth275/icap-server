@@ -46,7 +46,7 @@ printf "RESPMOD icap://localhost:1344/rewrite_demo ICAP/1.0\r\nHost: localhost\r
 Expected: `X-ICAP-Rewritten: 1` header and body token `ORIGINAL` rewritten to `REWRITTEN`.
 
 ## Verified modules (Jan 30, 2026)
-The following modules are present in the built image (`cicap:dev`) under `/usr/lib/c_icap`:
+The following modules are present in the built image (`icap-server`) under `/usr/lib/c_icap`:
 - srv_content_filtering (HTTP body content filtering)
 - virus_scan (antivirus scanning)
 - dnsbl_tables (IP/DNS blacklists)
@@ -57,7 +57,7 @@ The following modules are present in the built image (`cicap:dev`) under `/usr/l
 Verification command:
 
 ```bash
-docker run --rm --entrypoint /bin/sh cicap:dev -c "ls /usr/lib/c_icap"
+docker run --rm --entrypoint /bin/sh icap-server -c "ls /usr/lib/c_icap"
 ```
 
 ## Services configuration
@@ -126,9 +126,9 @@ clamd_mod.ClamdPort 3310
 4) Restart the ICAP container:
 
 ```bash
-docker rm -f cicap_dev || true
-docker run -d --name cicap_dev --network icap-net -p 1344:1344 \
-  -v ./config:/etc/c-icap cicap:dev
+docker rm -f icap-server || true
+docker run -d --name icap-server --network icap-net -p 1344:1344 \
+  -v ./config:/etc/c-icap icap-server
 ```
 
 ### Verify
@@ -149,7 +149,7 @@ Include /etc/c-icap/sys_logger.conf
 2) Restart the ICAP container:
 
 ```bash
-docker restart cicap_dev
+docker restart icap-server
 ```
 
 3) Verify ICAP still responds (for example using `echo`):
@@ -183,7 +183,7 @@ Service url_check srv_url_check.so
 3) Restart the ICAP container:
 
 ```bash
-docker restart cicap_dev
+docker restart icap-server
 ```
 
 4) Verify:
@@ -204,7 +204,7 @@ Include /etc/c-icap/shared_cache.conf
 2) Restart the ICAP container:
 
 ```bash
-docker restart cicap_dev
+docker restart icap-server
 ```
 
 ## Multi-container workflow (recommended)
@@ -229,9 +229,9 @@ docker run -d --name clamav --network icap-net -p 3310:3310 clamav/clamav:latest
 4) Start ICAP with the config directory mounted:
 
 ```bash
-docker rm -f cicap_dev || true
-docker run -d --name cicap_dev --network icap-net -p 1344:1344 \
-  -v ./config:/etc/c-icap cicap:dev
+docker rm -f icap-server || true
+docker run -d --name icap-server --network icap-net -p 1344:1344 \
+  -v ./config:/etc/c-icap icap-server
 ```
 
 ## Service test results (Jan 30, 2026)
