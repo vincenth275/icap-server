@@ -13,18 +13,16 @@ and services are enabled only via configuration files.
 - a multi-stage Docker build (Debian Bookworm)
 - configuration-driven activation (no service activation at build time)
 
-## Scripts in this repo
-- `create_cicap_full_v15.sh`
-  - current working generator
-  - uses the minimal container config (rewrite demo enabled, AV includes commented out)
-- `create_cicap_full_idempotent_v2_fixed.sh`
-  - experimental idempotent generator (not the current validated path)
+## Script in this repo
+- `create_cicap_full.sh` (canonical generator)
+  - validated working path
+  - uses a minimal container config that includes `services.conf`
 
 ## Quick start (current focus)
-Generate a project with the validated v15 script:
+Generate a project with the canonical script:
 
 ```bash
-./create_cicap_full_v15.sh icap-cicap-full
+./create_cicap_full.sh icap-cicap-full
 cd icap-cicap-full
 
 docker build -t cicap:dev -f docker/Dockerfile .
@@ -78,6 +76,10 @@ Optional services (commented by default in `services.conf`):
 - `sys_logger` (`sys_logger.so`)
 
 To enable any service, uncomment its line in `services.conf` and restart the container.
+
+## Next steps
+- Test each service one by one and record results.
+- Build a small HTML test page to exercise ICAP services end‑to‑end.
 
 ## Notes
 - The demo is intended for integration tests and presales demonstrations, not production AV.
