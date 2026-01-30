@@ -77,6 +77,23 @@ Optional services (commented by default in `services.conf`):
 
 To enable any service, uncomment its line in `services.conf` and restart the container.
 
+## Service test results (Jan 30, 2026)
+Test method: enable one service at a time in `services.conf` (echo always enabled), restart container, run ICAP `OPTIONS` for that service.
+
+```
+echo           -> 200 OK (Echo demo service)
+rewrite_demo   -> 200 OK (Rewrite demo service)
+content_filter -> 200 OK (srv_content_filtering service)
+url_check      -> 200 OK (Url_Check demo service)
+virus_scan     -> NO RESPONSE (within 5s)
+dnsbl_tables   -> NO RESPONSE (within 5s)
+shared_cache   -> NO RESPONSE (within 5s)
+sys_logger     -> NO RESPONSE (within 5s)
+```
+
+Notes:
+- Some services may require extra configuration or backends (e.g., clamd for `virus_scan`) to respond.
+
 ## Next steps
 - Test each service one by one and record results.
 - Build a small HTML test page to exercise ICAP services end‑to‑end.
